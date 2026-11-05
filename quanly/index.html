@@ -77,6 +77,7 @@
  .bao.do{background:#fde4df;color:#8f2216;border:1.5px solid #f4b8ab}
  .bao.xanh{background:#dff3e8;color:#0a5c3b;border:1.5px solid #a9dbbf}
  .bao.vang{background:#fff4d6;color:#7a5000;border:1.5px solid #f1d58a}
+ .bao.lam{background:#e6f1f3;color:var(--teal);border:1.5px solid #b9d6dc}
 
  input,select,textarea,button{font:inherit}
  input[type=text],input[type=password],select,textarea{border:2px solid var(--vien);border-radius:12px;
@@ -355,7 +356,7 @@
 const API='https://script.google.com/macros/s/AKfycby9QW_ZaYyzIzAhEK3vm5m_gKrPqIV93q7Iqhh9aiQAZjfVXMVBPlDqlzEBW57J7bRI3w/exec';
 const MUC={1:'Mọi khách',2:'Chơi khá',3:'Giải lớn'};
 const NGAY_MS=86400000;
-let pin='', D=null, giaiGoc=[], giaiDang=[], maCho=[], henGio=null, chon=new Set(), soDongKho=200;
+let pin='', D=null, giaiGoc=[], giaiDang=[], maCho=[], henGio=null, chon=new Set(), soDongKho=200, nguonDangDoc='';
 const loc={loai:'', tt:'', thoiGian:'1', nhom:''};
 
 const $=id=>document.getElementById(id);
@@ -743,7 +744,7 @@ tha.addEventListener('click',()=>$('file').click());
 ['dragleave','drop'].forEach(ev=>tha.addEventListener(ev,e=>{e.preventDefault();tha.classList.remove('keo')}));
 tha.addEventListener('drop',e=>{ if(e.dataTransfer.files[0]) docFile(e.dataTransfer.files[0]) });
 $('file').addEventListener('change',e=>{ if(e.target.files[0]) docFile(e.target.files[0]); e.target.value=''; });
-$('dan').addEventListener('input',()=>{ maCho=tachMa(boDong($('dan').value)); xemTruoc(); });
+$('dan').addEventListener('input',()=>{ maCho=tachMa(boDong($('dan').value)); xemTruoc(''); });
 function boDong(text){ return text.split(/\r?\n/).map(l=>l.split(/[,;\t]/)); }
 
 /** Mã bắt đầu bằng tiền tố nào thì thuộc giải đó (giống hệt máy chủ). Mã iPOS có thể dính liền tiền tố, nên không cắt theo dấu gạch. */
@@ -756,48 +757,77 @@ function loaiTheoTienTo(ma){
   return mo?null:tot;
 }
 
-/** Tìm cột chứa mã: ưu tiên cột có tiêu đề "mã/code/voucher" nhiều mã nhất bên dưới; không có tiêu đề thì đoán cột. */
-function tachMa(rows){
+/** Bỏ dấu tiếng Việt để so tiêu đề, "Mã khuyến mãi" và "Ma khuyen mai" như nhau. */
+function khongDau(s){
+  return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().trim();
+}
+const TIEU_DE_MA=/\bma\b.*(khuyen ?mai|voucher|uu dai|giam gia|coupon|code)|^(ma|code|voucher|coupon)$|voucher ?code|^ma$/;
+const TIEU_DE_KHONG=/chuong trinh|khach hang|nhan vien|don hang|hoa don|cua hang|nha hang|ngay|thoi gian|trang thai|ten|so luong|gia tri|loai/;
+
+function tachMa(rows, ghiChu){
   rows=rows.filter(r=>r&&r.some(c=>String(c||'').trim()));
   if(!rows.length) return [];
-  const laMa=v=>{ v=String(v==null?'':v).trim(); return /^[A-Za-z0-9][A-Za-z0-9_-]{2,40}$/.test(v) && !/^\d{1,2}[\/.-]\d{1,2}/.test(v); };
-  const giongMa=v=>{ v=String(v==null?'':v).trim(); return laMa(v) && (/\d/.test(v) || /[-_]/.test(v)) && !/^0\d{8,10}$/.test(v); };
-  const demDuoi=(j,tu)=>{ let n=0; for(let i=tu;i<rows.length;i++) if(giongMa(rows[i][j])) n++; return n; };
-  let cot=-1, dongDau=0, tot=0;
+  const sach=v=>String(v==null?'':v).trim();
+  // Giá trị có dạng mã: liền một chuỗi, không phải ngày tháng
+  const laMa=v=>{ v=sach(v); return /^[A-Za-z0-9][A-Za-z0-9_-]{2,40}$/.test(v) && !/^\d{1,2}[\/.-]\d{1,2}/.test(v); };
+  // Khi phải tự đoán cột: mã voucher luôn có ít nhất một CHỮ CÁI.
+  // Cột toàn số như "Mã chương trình" (359055) bị loại ở đây.
+  const doanMa=v=>{ v=sach(v); return laMa(v) && /[A-Za-z]/.test(v) && !/^0\d{8,10}$/.test(v); };
+  const dem=(j,tu,ham)=>{ let n=0; for(let i=tu;i<rows.length;i++) if(ham(rows[i][j])) n++; return n; };
+
+  let cot=-1, dongDau=0, diem=0, nguon='';
+  // 1) Tìm theo tiêu đề. Chấm điểm bằng số mã nằm bên dưới nên dòng tít không thắng được cột thật.
   for(let i=0;i<Math.min(rows.length,15);i++){
-    rows[i].forEach((c,j)=>{
-      const v=String(c||'').trim();
-      if(v.length>30 || !/m[ãa]\s*(voucher|khuy|gi[ảa]m|code)?$|^code$|voucher|coupon|m[ãa] ưu đãi/i.test(v)) return;
-      const d=demDuoi(j,i+1); if(d>tot){ tot=d; cot=j; dongDau=i+1; }
-    });
+    for(let j=0;j<rows[i].length;j++){
+      const h=khongDau(rows[i][j]);
+      if(!h || h.length>40) continue;
+      if(TIEU_DE_KHONG.test(h) && !TIEU_DE_MA.test(h)) continue;
+      if(!TIEU_DE_MA.test(h)) continue;
+      const d=dem(j,i+1,laMa);
+      if(d>diem){ diem=d; cot=j; dongDau=i+1; nguon='cột "'+sach(rows[i][j])+'"'; }
+    }
   }
+  // 2) Không có tiêu đề nào khớp thì tự đoán cột
   const coTieuDe=cot>=0;
-  if(cot<0){ const diem=[]; rows.forEach(r=>r.forEach((c,j)=>{ if(giongMa(c)) diem[j]=(diem[j]||0)+1 })); diem.forEach((d,j)=>{ if(d>tot){tot=d;cot=j} }); dongDau=0; }
-  if(cot<0) return [];
-  const ra=[], daThay={};
-  for(let i=dongDau;i<rows.length;i++){
-    const v=String(rows[i][cot]==null?'':rows[i][cot]).trim().toUpperCase();
-    if(v && (coTieuDe?laMa(v):giongMa(v)) && !daThay[v]){ daThay[v]=1; ra.push(v); }
+  if(!coTieuDe){
+    for(let j=0;j<Math.max(...rows.map(r=>r.length));j++){
+      const d=dem(j,0,doanMa);
+      if(d>diem){ diem=d; cot=j; dongDau=0; nguon='cột thứ '+(j+1)+' (tự đoán, file không có tiêu đề)'; }
+    }
   }
+  if(cot<0) return [];
+  const ra=[], thay={};
+  for(let i=dongDau;i<rows.length;i++){
+    const v=sach(rows[i][cot]).toUpperCase();
+    if(v && (coTieuDe?laMa(v):doanMa(v)) && !thay[v]){ thay[v]=1; ra.push(v); }
+  }
+  if(ghiChu) ghiChu.nguon=nguon;
   return ra;
 }
+
 function docFile(f){
   const ten=f.name.toLowerCase(), rd=new FileReader();
   if(/\.(xlsx|xls)$/.test(ten)){
     if(typeof XLSX==='undefined'){ bao('Chưa tải được bộ đọc Excel, kiểm tra mạng rồi thử lại'); return; }
     rd.onload=e=>{ try{
-      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'}); let tatCa=[];
-      wb.SheetNames.forEach(n=>{ tatCa=tatCa.concat(tachMa(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}))) });
-      maCho=[...new Set(tatCa)]; $('dan').value=maCho.join('\n'); bao('Đọc được '+maCho.length+' mã từ '+f.name); xemTruoc();
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'}); let tatCa=[]; let nguonCot='';
+      wb.SheetNames.forEach(n=>{ const g={};
+        tatCa=tatCa.concat(tachMa(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}),g));
+        if(g.nguon&&!nguonCot) nguonCot=g.nguon; });
+      maCho=[...new Set(tatCa)]; $('dan').value=maCho.join('\n');
+      bao('Đọc được '+maCho.length+' mã từ '+f.name); xemTruoc(nguonCot);
     }catch(err){ bao('Không đọc được file Excel này'); } };
     rd.readAsArrayBuffer(f);
   } else {
-    rd.onload=e=>{ maCho=tachMa(boDong(e.target.result)); $('dan').value=maCho.join('\n'); bao('Đọc được '+maCho.length+' mã từ '+f.name); xemTruoc(); };
+    rd.onload=e=>{ const g={}; maCho=tachMa(boDong(e.target.result),g); $('dan').value=maCho.join('\n');
+      bao('Đọc được '+maCho.length+' mã từ '+f.name); xemTruoc(g.nguon); };
     rd.readAsText(f);
   }
 }
-function xemTruoc(){
+function xemTruoc(nguonCot){
   $('ketQuaNap').innerHTML='';
+  if(nguonCot!==undefined) nguonDangDoc=nguonCot;
   if(!maCho.length){ $('xemTruoc').innerHTML='<div class="trong">Chưa có mã nào</div>'; $('nutNap').disabled=true; return; }
   const loai=$('napLoai').value, giai=(A&&A.giai)||[];
   const daCo=new Set((A?A.kho:[]).map(m=>m.ma.toUpperCase()));
@@ -808,7 +838,9 @@ function xemTruoc(){
     if(!g){ khongRo.push(m); return; } dem[g.ten]=(dem[g.ten]||0)+1;
   });
   const moi=Object.values(dem).reduce((s,n)=>s+n,0);
-  let h='<div class="bao xanh">Tìm thấy <b>'+maCho.length+'</b> mã. Sẽ nạp mới <b>'+moi+'</b>: '
+  let h='';
+  if(nguonDangDoc) h+='<div class="bao lam">📄 Đang lấy mã từ <b>'+esc(nguonDangDoc)+'</b>. Không đúng cột thì dán tay cột mã vào ô trên.</div>';
+  h+='<div class="bao xanh">Tìm thấy <b>'+maCho.length+'</b> mã. Sẽ nạp mới <b>'+moi+'</b>: '
     +(Object.keys(dem).map(k=>'<b>'+dem[k]+'</b> '+esc(k)).join(' · ')||'không có')+'</div>';
   if(trung) h+='<div class="bao vang"><b>'+trung+'</b> mã đã có sẵn trong kho, sẽ bỏ qua.</div>';
   if(khongRo.length) h+='<div class="bao do"><b>'+khongRo.length+'</b> mã không nhận ra thuộc giải nào, sẽ bỏ qua. Ví dụ: '
@@ -816,7 +848,7 @@ function xemTruoc(){
   h+='<div style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--mo)">Ví dụ: '+maCho.slice(0,6).map(esc).join(' · ')+(maCho.length>6?' …':'')+'</div>';
   $('xemTruoc').innerHTML=h; $('nutNap').disabled = !moi;
 }
-function xoaNap(){ maCho=[]; $('dan').value=''; xemTruoc(); }
+function xoaNap(){ maCho=[]; $('dan').value=''; xemTruoc(''); }
 async function napMa(){
   if(!maCho.length) return;
   $('nutNap').disabled=true; $('nutNap').textContent='ĐANG NẠP…';
