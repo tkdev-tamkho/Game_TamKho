@@ -1,0 +1,15 @@
+{
+  "name": "Tám Khô · Quản lý Game",
+  "short_name": "Tám Khô QL",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#163d4b",
+  "theme_color": "#163d4b",
+  "lang": "vi",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
