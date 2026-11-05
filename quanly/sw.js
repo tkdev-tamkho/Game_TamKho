@@ -1,5 +1,5 @@
 // Chỉ để trang cài được như app. Luôn lấy bản mới, không giữ bản cũ gây hiểu nhầm số liệu.
-const VO = 'tamkho-ql-v2';
+const VO = 'tamkho-ql-v3';
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys().then(ks => Promise.all(ks.filter(k => k !== VO).map(k => caches.delete(k))))
