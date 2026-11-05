@@ -177,6 +177,7 @@
   <img src="logo.png" alt="Tám Khô">
   <h1>TÁM KHÔ</h1>
   <p>QUẢN LÝ GAME</p>
+  <div style="font-size:11.5px;color:var(--mo);font-weight:600;margin:-12px 0 14px">bản <span id="banCong">…</span></div>
   <input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="····" autocomplete="off">
   <div class="loi" id="loi"></div>
   <button class="nut" onclick="vao()">VÀO QUẢN LÝ</button>
@@ -353,6 +354,7 @@
 <div class="tip an" id="tip"></div>
 
 <script>
+const BAN='2026-11-06 · b5';
 const API='https://script.google.com/macros/s/AKfycby9QW_ZaYyzIzAhEK3vm5m_gKrPqIV93q7Iqhh9aiQAZjfVXMVBPlDqlzEBW57J7bRI3w/exec';
 const MUC={1:'Mọi khách',2:'Chơi khá',3:'Giải lớn'};
 const NGAY_MS=86400000;
@@ -490,7 +492,7 @@ function phanTich(d){
 
 function nhan(d, lanDau){
   D=d; A=phanTich(d);
-  $('gio').textContent='cập nhật '+d.gio;
+  $('gio').textContent='cập nhật '+d.gio+' · bản '+BAN;
   veTongQuan(); veKho(); veKhach(); veLoaiNap();
   if(lanDau || JSON.stringify(giaiDang)===JSON.stringify(giaiGoc)){ giaiGoc=d.giai||[]; veGiai(giaiGoc); } else veGiai(giaiDang);
 }
@@ -931,7 +933,19 @@ async function luuGiai(){
   const t=doc('tk_tab'); if(t && $(t)) moTab(t);
   const p=doc('tk_pin'); if(p){ $('pin').value=p; await vao(); }
 })();
-if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+$('banCong').textContent=BAN;
+
+if('serviceWorker' in navigator){
+  // Bản mới thay bản cũ xong thì tự nạp lại trang, khỏi phải Ctrl+F5
+  let daNapLai=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!daNapLai){ daNapLai=true; location.reload(); } });
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(r=>{
+      r.update();                       // hỏi máy chủ xem có bản mới chưa
+      setInterval(()=>r.update(),600000);
+    }).catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
