@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://script.google.com https://script.googleusercontent.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
 <title>Tám Khô · Quản lý Game</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#163d4b">
@@ -10,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="xlsx.full.min.js"></script><!-- SheetJS 0.20.3, đã vá lỗi của 0.18.5 -->
 <style>
  :root{
    --teal:#163d4b; --teal2:#0f2e3a; --kem:#fbe8c7; --kem2:#fbf4e4; --kem3:#fbf3e1;
@@ -148,7 +151,20 @@
  #cong img{width:120px;height:120px;margin-bottom:6px}
  #cong h1{font-family:"Baloo 2",sans-serif;color:var(--do);margin:0;font-size:30px;letter-spacing:.5px}
  #cong p{margin:2px 0 18px;font-weight:700;letter-spacing:2px;font-size:12.5px}
- #cong input{text-align:center;font-size:26px;letter-spacing:10px;margin-bottom:10px}
+ #cong label{display:block;text-align:left;font-size:12.5px;font-weight:700;margin:0 0 4px 2px}
+ #cong input{font-size:16px;margin-bottom:12px;width:100%}
+ .o-mk{position:relative}
+ .o-mk input{padding-right:58px}
+ .o-mk button{position:absolute;right:6px;top:6px;border:0;background:none;color:var(--mo);font:700 12px Inter,sans-serif;cursor:pointer;padding:6px}
+ #cong .nho{font-size:11.5px;color:var(--mo);margin-top:12px;font-weight:500;letter-spacing:0}
+ #hopBM{position:fixed;inset:0;z-index:50;background:rgba(15,46,58,.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+ #hopBM .the{max-width:560px;width:100%;margin:0}
+ #hopBM h3{margin:16px 0 8px}
+ #hopBM input{width:100%;margin-bottom:8px}
+ .dn-dong{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--luoi)}
+ .dn-dong span:last-child{color:var(--mo);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}
+ .kq-SAI,.kq-BI_KHOA,.kq-DOI_MK_SAI{color:var(--do);font-weight:700}
+ .kq-THANH_CONG{color:var(--xanh);font-weight:700}
  #cong .nut{width:100%}
  .loi{color:var(--do);font-weight:700;font-size:13px;min-height:20px;margin-bottom:6px}
 
@@ -172,15 +188,47 @@
 </head>
 <body>
 
-<!-- ===================== CỔNG PIN ===================== -->
+<!-- ===================== CỔNG ĐĂNG NHẬP ===================== -->
 <div id="cong" class="the">
   <img src="logo.png" alt="Tám Khô">
   <h1>TÁM KHÔ</h1>
   <p>QUẢN LÝ GAME</p>
   <div style="font-size:11.5px;color:var(--mo);font-weight:600;margin:-12px 0 14px">bản <span id="banCong">…</span></div>
-  <input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="····" autocomplete="off">
+  <label for="tk">Tài khoản</label>
+  <input id="tk" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="64">
+  <label for="mk">Mật khẩu</label>
+  <div class="o-mk">
+    <input id="mk" type="password" autocomplete="current-password" maxlength="200">
+    <button type="button" id="nutHien" onclick="hienMk('mk',this)">Hiện</button>
+  </div>
   <div class="loi" id="loi"></div>
-  <button class="nut" onclick="vao()">VÀO QUẢN LÝ</button>
+  <button class="nut" id="nutVao" onclick="vao()">ĐĂNG NHẬP</button>
+  <div class="nho">Đóng app là phải đăng nhập lại · gõ sai 5 lần sẽ khoá 15 phút</div>
+</div>
+
+<!-- ===================== HỘP BẢO MẬT ===================== -->
+<div id="hopBM" class="an">
+  <div class="the">
+    <div class="hang" style="justify-content:space-between;align-items:center">
+      <b class="brand" style="font-size:20px">🔒 Bảo mật</b>
+      <button class="nut xam" onclick="dongBM()">Đóng</button>
+    </div>
+    <div id="bmTruoc" class="bao lam" style="margin-top:10px"></div>
+
+    <h3>Đổi mật khẩu</h3>
+    <input id="mkCu" type="password" placeholder="Mật khẩu đang dùng" autocomplete="current-password" maxlength="200">
+    <input id="mkMoi" type="password" placeholder="Mật khẩu mới (từ 10 ký tự, có chữ và số)" autocomplete="new-password" maxlength="128">
+    <input id="mkMoi2" type="password" placeholder="Gõ lại mật khẩu mới" autocomplete="new-password" maxlength="128">
+    <div class="loi" id="loiMk"></div>
+    <button class="nut" id="nutDoiMk" onclick="doiMk()">ĐỔI MẬT KHẨU</button>
+
+    <h3>Máy đang đăng nhập</h3>
+    <p style="margin:0 0 8px;font-size:13px;color:var(--mo)">Nghi có người lạ vào được, bấm nút dưới rồi đổi mật khẩu. Mọi máy đang mở app (cả máy này) sẽ bị đăng xuất.</p>
+    <button class="nut xam" onclick="thoatHet()">Đăng xuất mọi máy</button>
+
+    <h3>Lịch sử đăng nhập</h3>
+    <div id="bmNhatKy" style="font-size:13px;color:var(--mo)">đang tải…</div>
+  </div>
 </div>
 
 <!-- ===================== APP ===================== -->
@@ -193,7 +241,8 @@
       </div>
       <div class="hang">
         <button class="nut-nho" onclick="napLai()">↻ Làm mới</button>
-        <button class="nut-nho" onclick="thoat()">Khoá</button>
+        <button class="nut-nho" onclick="moBM()">🔒 Bảo mật</button>
+        <button class="nut-nho" onclick="thoat()">Đăng xuất</button>
       </div>
     </div>
     <nav class="tabs">
@@ -354,11 +403,11 @@
 <div class="tip an" id="tip"></div>
 
 <script>
-const BAN='2026-11-06 · b5';
+const BAN='2026-11-08 · b6';
 const API='https://script.google.com/macros/s/AKfycby9QW_ZaYyzIzAhEK3vm5m_gKrPqIV93q7Iqhh9aiQAZjfVXMVBPlDqlzEBW57J7bRI3w/exec';
 const MUC={1:'Mọi khách',2:'Chơi khá',3:'Giải lớn'};
 const NGAY_MS=86400000;
-let pin='', D=null, giaiGoc=[], giaiDang=[], maCho=[], henGio=null, chon=new Set(), soDongKho=200, nguonDangDoc='';
+let token='', D=null, giaiGoc=[], giaiDang=[], maCho=[], henGio=null, chon=new Set(), soDongKho=200, nguonDangDoc='';
 const loc={loai:'', tt:'', thoiGian:'1', nhom:''};
 
 const $=id=>document.getElementById(id);
@@ -382,23 +431,105 @@ async function goi(body){
   const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
   return r.json();
 }
-function ql(extra){return goi(Object.assign({action:'QUAN_LY',pin:pin},extra||{}))}
+/* Phiên đăng nhập: chỉ giữ trong sessionStorage — đóng app là mất, không nằm lại trên máy */
+function luuPhien(t){try{t?sessionStorage.setItem('tk_phien',t):sessionStorage.removeItem('tk_phien')}catch(e){}}
+function docPhien(){try{return sessionStorage.getItem('tk_phien')||''}catch(e){return ''}}
+try{localStorage.removeItem('tk_pin')}catch(e){}   // xoá PIN cũ từng lưu dạng chữ
+function thietBi(){
+  const u=navigator.userAgent||'';
+  const hdh=/Windows/.test(u)?'Windows':/Android/.test(u)?'Android':/iPhone|iPad/.test(u)?'iPhone/iPad':/Mac OS/.test(u)?'Mac':'Khác';
+  const tr=/Edg\//.test(u)?'Edge':/Chrome\//.test(u)?'Chrome':/Firefox\//.test(u)?'Firefox':/Safari\//.test(u)?'Safari':'';
+  const app=matchMedia('(display-mode: standalone)').matches?' · app':'';
+  return hdh+' · '+tr+app;
+}
+async function ql(extra){
+  if(!token) throw new Error('HET_PHIEN');
+  const r=await goi(Object.assign({action:'QUAN_LY',token:token},extra||{}));
+  if(r && r.error==='HET_PHIEN'){ veCong('Phiên đăng nhập đã hết. Đăng nhập lại.'); throw new Error('HET_PHIEN'); }
+  return r;
+}
+function veCong(loi){
+  token=''; luuPhien(''); D=null; clearInterval(henGio);
+  $('app').classList.add('an'); $('hopBM').classList.add('an'); $('cong').classList.remove('an');
+  $('mk').value=''; $('loi').textContent=loi||''; setTimeout(()=>($('tk').value?$('mk'):$('tk')).focus(),30);
+}
+function hienMk(id,b){const i=$(id);const an=i.type==='password';i.type=an?'text':'password';b.textContent=an?'Ẩn':'Hiện'}
+
+/* Bỏ máy không bấm gì quá lâu thì tự đăng xuất (máy chủ cũng tự cắt phiên) */
+let nghiPhut=120, lucBam=Date.now();
+['pointerdown','keydown','wheel','touchstart'].forEach(ev=>addEventListener(ev,()=>{lucBam=Date.now()},{passive:true}));
+setInterval(()=>{ if(token && Date.now()-lucBam>nghiPhut*60000){ goi({action:'QUAN_LY',token:token,viec:'THOAT'}).catch(()=>{}); veCong('Đã tự đăng xuất vì lâu không thao tác.'); } },30000);
 
 /* ===================== CỔNG ===================== */
+let lanTruocDN=null;
 async function vao(){
-  const p=$('pin').value.trim(); if(!p){$('loi').textContent='Chưa nhập mã';return}
-  $('loi').textContent='đang tải dữ liệu…';
+  const u=$('tk').value.trim(), m=$('mk').value;
+  if(!u||!m){$('loi').textContent='Nhập đủ tài khoản và mật khẩu';return}
+  $('nutVao').disabled=true; $('loi').textContent='đang kiểm tra…';
   try{
-    const r=await goi({action:'QUAN_LY',pin:p,viec:'TAI_HET'});
-    if(!r.ok){$('loi').textContent=r.error==='SAI_PIN'?'Mã không đúng':'Lỗi: '+r.error;return}
-    pin=p; luu('tk_pin',p); $('loi').textContent='';
-    $('cong').classList.add('an'); $('app').classList.remove('an');
-    nhan(r,true);
-    clearInterval(henGio); henGio=setInterval(()=>napLai(true),60000);
+    const r=await goi({action:'DANG_NHAP',user:u,matKhau:m,thietBi:thietBi()});
+    if(!r.ok){
+      $('mk').value='';
+      $('loi').textContent=r.error==='TAM_KHOA'?('Gõ sai nhiều lần, đã khoá. Thử lại sau '+r.conPhut+' phút.')
+        :r.error==='SAI_DANG_NHAP'?('Sai tài khoản hoặc mật khẩu'+(r.conLai<=2?' · còn '+r.conLai+' lần trước khi khoá':''))
+        :'Lỗi: '+r.error;
+      return;
+    }
+    $('mk').value=''; luu('tk_ten',u);
+    token=r.token; luuPhien(token); nghiPhut=r.nghiPhut||120; lanTruocDN=r.truoc||null; lucBam=Date.now();
+    await vaoApp();
+    if(lanTruocDN && lanTruocDN.saiTuDo>0) bao('⚠️ Có '+lanTruocDN.saiTuDo+' lần gõ sai mật khẩu kể từ lần đăng nhập trước');
   }catch(e){$('loi').textContent='Không nối được máy chủ. Kiểm tra mạng.'}
+  finally{$('nutVao').disabled=false}
 }
-function thoat(){pin='';luu('tk_pin','');location.reload()}
-$('pin').addEventListener('keydown',e=>{if(e.key==='Enter')vao()});
+async function vaoApp(){
+  $('loi').textContent='đang tải dữ liệu…';
+  const r=await ql({viec:'TAI_HET'});
+  if(!r.ok) throw new Error(r.error);
+  $('loi').textContent='';
+  $('cong').classList.add('an'); $('app').classList.remove('an');
+  nhan(r,true);
+  clearInterval(henGio); henGio=setInterval(()=>napLai(true),60000);
+}
+async function thoat(){
+  const t=token; veCong('Đã đăng xuất.');
+  if(t) try{ await goi({action:'QUAN_LY',token:t,viec:'THOAT'}); }catch(e){}
+}
+$('tk').addEventListener('keydown',e=>{if(e.key==='Enter')$('mk').focus()});
+$('mk').addEventListener('keydown',e=>{if(e.key==='Enter')vao()});
+
+/* ===================== BẢO MẬT ===================== */
+const TEN_KQ={THANH_CONG:'Đăng nhập',SAI:'Gõ sai',BI_KHOA:'Thử khi đang khoá',DANG_XUAT:'Đăng xuất',
+  THOAT_MOI_MAY:'Đăng xuất mọi máy',DOI_MAT_KHAU:'Đổi mật khẩu',DOI_MK_SAI:'Đổi MK: sai MK cũ'};
+async function moBM(){
+  $('hopBM').classList.remove('an'); $('loiMk').textContent='';
+  const t=lanTruocDN;
+  $('bmTruoc').textContent=t&&t.luc?('Lần đăng nhập trước: '+luc(t.luc)+(t.tb?' · '+t.tb:'')+' · '+(t.saiTuDo?t.saiTuDo+' lần gõ sai từ đó':'không có lần gõ sai nào từ đó')):'Đây là lần đăng nhập đầu tiên được ghi lại.';
+  $('bmNhatKy').textContent='đang tải…';
+  try{
+    const r=await ql({viec:'NHAT_KY_DN'}); if(!r.ok) throw new Error(r.error);
+    $('bmNhatKy').innerHTML=r.nhatKy.length?r.nhatKy.map(x=>'<div class="dn-dong"><span>'+esc(luc(x.luc))+' · <span class="kq-'+esc(x.kq)+'">'+esc(TEN_KQ[x.kq]||x.kq)+'</span>'+(x.user&&x.kq!=='THANH_CONG'?' · '+esc(x.user):'')+'</span><span>'+esc(x.tb||'')+'</span></div>').join(''):'Chưa có.';
+  }catch(e){ if(e.message!=='HET_PHIEN') $('bmNhatKy').textContent='Chưa tải được: '+e.message; }
+}
+function dongBM(){ $('hopBM').classList.add('an'); ['mkCu','mkMoi','mkMoi2'].forEach(i=>$(i).value=''); }
+async function doiMk(){
+  const cu=$('mkCu').value, moi=$('mkMoi').value, moi2=$('mkMoi2').value, l=$('loiMk');
+  if(!cu||!moi){l.textContent='Nhập đủ mật khẩu cũ và mới';return}
+  if(moi!==moi2){l.textContent='Hai lần gõ mật khẩu mới không giống nhau';return}
+  if(moi.length<10||!/[a-zA-Z]/.test(moi)||!/[0-9]/.test(moi)){l.textContent='Mật khẩu mới phải từ 10 ký tự, có cả chữ và số';return}
+  $('nutDoiMk').disabled=true; l.textContent='đang đổi…';
+  try{
+    const r=await ql({viec:'DOI_MAT_KHAU',matKhauCu:cu,matKhauMoi:moi,thietBi:thietBi()});
+    if(!r.ok){ l.textContent=r.error==='SAI_MAT_KHAU_CU'?'Mật khẩu đang dùng không đúng':r.error==='MAT_KHAU_TRUNG'?'Mật khẩu mới phải khác mật khẩu cũ':r.error==='MAT_KHAU_YEU'?'Mật khẩu mới phải từ 10 ký tự, có cả chữ và số':'Lỗi: '+r.error; return; }
+    veCong('Đã đổi mật khẩu. Mọi máy đã bị đăng xuất, đăng nhập lại bằng mật khẩu mới.');
+  }catch(e){ if(e.message!=='HET_PHIEN') l.textContent='Không nối được máy chủ'; }
+  finally{ $('nutDoiMk').disabled=false; ['mkCu','mkMoi','mkMoi2'].forEach(i=>$(i).value=''); }
+}
+async function thoatHet(){
+  if(!confirm('Đăng xuất MỌI máy đang mở app, kể cả máy này?')) return;
+  try{ const r=await ql({viec:'THOAT_HET',thietBi:thietBi()}); if(!r.ok) throw new Error(r.error);
+    veCong('Đã đăng xuất mọi máy.'); }catch(e){ if(e.message!=='HET_PHIEN') bao('Chưa làm được: '+e.message); }
+}
 
 function moTab(t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
@@ -409,9 +540,9 @@ function moTab(t){
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>moTab(b.dataset.t)));
 
 async function napLai(lang){
-  if(!pin)return;
-  try{ const r=await ql({viec:'TAI_HET'}); if(r.ok) nhan(r,false); }
-  catch(e){ if(!lang) bao('Mất mạng, chưa làm mới được'); $('gio').textContent='mất mạng · đang thử lại'; }
+  if(!token)return;
+  try{ const r=await ql({viec:'TAI_HET',tuDong:!!lang}); if(r.ok) nhan(r,false); }
+  catch(e){ if(e.message==='HET_PHIEN') return; if(!lang) bao('Mất mạng, chưa làm mới được'); $('gio').textContent='mất mạng · đang thử lại'; }
 }
 
 /* ===================== PHÂN TÍCH ===================== */
@@ -931,7 +1062,10 @@ async function luuGiai(){
 /* ===================== KHỞI ĐỘNG ===================== */
 (async()=>{
   const t=doc('tk_tab'); if(t && $(t)) moTab(t);
-  const p=doc('tk_pin'); if(p){ $('pin').value=p; await vao(); }
+  $('tk').value=doc('tk_ten');
+  token=docPhien();
+  if(token){ try{ await vaoApp(); }catch(e){ if(e.message!=='HET_PHIEN') veCong('Không nối được máy chủ. Kiểm tra mạng.'); } }
+  else ($('tk').value?$('mk'):$('tk')).focus();
 })();
 $('banCong').textContent=BAN;
 

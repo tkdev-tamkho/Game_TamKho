@@ -1,5 +1,5 @@
 // Chỉ để trang cài được như app. KHÔNG giữ bản cũ của trang, vì bản cũ gây đọc sai dữ liệu.
-const VO = 'tamkho-ql-2026-11-06-b5';
+const VO = 'tamkho-ql-2026-11-08-b6';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(
