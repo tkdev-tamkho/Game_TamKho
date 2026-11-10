@@ -489,14 +489,6 @@
   <div class="font-extrabold text-[#c83228] mt-1">⚠️ Lưu ý: Chỉ có giá trị sử dụng tại Tám Khô 474 Luỹ Bán Bích</div>
         </div>
 <div id="walletList" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
-        <div class="mt-2 p-2.5 rounded-2xl bg-[#e3f2f1] border border-[#0068ff]/30 flex items-center justify-between gap-2">
-          <div class="text-[10.5px] text-[#0f485b] font-semibold leading-tight">
-            <strong class="text-[#0068ff]">💬 Zalo OA Hộ Kinh Doanh Tám Khô:</strong> Đã bật tự động nhắc hẹn cho SĐT <span id="walletPhoneLabel" class="font-mono font-extrabold text-[#c83228]">của bạn</span> trước khi hết hạn Voucher.
-          </div>
-          <button type="button" id="btnTriggerZaloReminder" class="px-2.5 py-1.5 rounded-xl bg-[#0068ff] hover:bg-[#0052cc] text-white font-extrabold text-[10px] flex-shrink-0 shadow active:scale-95">
-            📲 Xem Tin Zalo
-          </button>
-        </div>
         <div class="mt-2 pt-2 border-t-2 border-[#163d4b]/15 flex justify-between items-center text-xs text-[#123d4f] font-semibold">
           <span>Đưa mã này cho thu ngân quét iPOS</span>
           <button id="clearWalletBtn" class="px-2.5 py-1 rounded-lg bg-[#c83228]/10 text-[#c83228] hover:bg-[#c83228]/20 font-bold text-[11px]">Xóa lịch sử</button>
@@ -550,12 +542,6 @@
             <input type="hidden" id="customerTableInput" value="">
           </div>
 
-          <label class="flex items-start space-x-2 p-2.5 rounded-xl bg-[#e3f2f1] border border-[#7ab8b6] cursor-pointer">
-            <input type="checkbox" id="zaloRemindConsent" checked class="mt-0.5 rounded text-[#0068ff] focus:ring-0">
-            <span class="text-[10.5px] text-[#0f485b] font-semibold leading-snug">
-              Gửi mã Voucher về <strong class="text-[#0068ff]">Zalo OA Hộ Kinh Doanh Tám Khô</strong> & tự động nhắn Zalo nhắc tôi trước khi Voucher hết hạn!
-            </span>
-          </label>
 
           <p id="qrLoginError" class="hidden text-[11px] font-extrabold text-[#c83228] text-center">Vui lòng nhập số điện thoại hợp lệ (9-11 số)!</p>
 
@@ -571,26 +557,6 @@
       </div>
     </div>
 
-    <!-- ZALO ZNS / OA EXPIRY REMINDER POPUP BANNER (MÔ PHỎNG TIN NHẮN ZALO NHẮC SẮP HẾT HẠN VOUCHER) -->
-    <div id="zaloZnsBanner" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-sm rounded-2xl bg-white border-2 border-[#0068ff] shadow-2xl p-3 text-left text-[#123d4f] transition-all">
-      <div class="flex items-start justify-between gap-2">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-xl bg-[#0068ff] text-white font-extrabold text-xs flex items-center justify-center shadow flex-shrink-0">
-            Zalo
-          </div>
-          <div>
-            <div class="flex items-center space-x-1">
-              <span class="text-[11px] font-extrabold text-[#0068ff] uppercase">Zalo OA • Hộ Kinh Doanh Tám Khô</span>
-              <span class="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[9px] font-bold">Nhắc hạn Voucher</span>
-            </div>
-            <p id="zaloZnsMessage" class="text-[11px] text-neutral-700 font-medium leading-snug mt-0.5">
-              ⏰ Bạn ơi! Mã Voucher của SĐT 0908***888 còn hạn đến hết 05/12. Đưa thu ngân quét nhé!
-            </p>
-          </div>
-        </div>
-        <button type="button" id="closeZaloZnsBtn" class="text-neutral-400 hover:text-neutral-700 font-bold text-xs px-1">✕</button>
-      </div>
-    </div>
 
     <!-- MODAL: QUẢN LÝ KHO VOUCHER iPOS & CÀI ĐẶT GIẢI THƯỞNG (ĐỒNG BỘ TÔNG KEM - XANH BIỂN - ĐỎ CAM TÁM KHÔ) -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#0f2630]/80 backdrop-blur-md">
@@ -860,7 +826,7 @@
   <div class="font-semibold text-[#123d4f]">📍 tại chi nhánh Tám Khô - 474 Lũy Bán Bích, P. Tân Phú</div>
 </div>
 <!-- Voucher Card Visual (Coastal Cream & Teal Ticket with Coral Accent) -->
-        <div class="bg-gradient-to-br from-[#e3f2f1] to-[#cde8e6] border-2 border-dashed border-[#163d4b] rounded-2xl p-3.5 my-2 text-left relative shadow-inner">
+        <div id="voucherCardBox" class="bg-gradient-to-br from-[#e3f2f1] to-[#cde8e6] border-2 border-dashed border-[#163d4b] rounded-2xl p-3.5 my-2 text-left relative shadow-inner">
           <div class="flex justify-between items-start">
             <div>
               <div id="voucherTypeLabel" class="text-[9px] text-[#0d7a4f] font-extrabold uppercase tracking-wider">MÃ VOUCHER IPOS DUY NHẤT</div>
@@ -1020,6 +986,80 @@
       { id: 'tier_dauphong', name: 'Tặng 01 Đĩa Đậu Phộng Cháy Tỏi', mode: 'general', code: 'MON-DAUPHONG', rate: 15 },
       { id: 'tier_1bombia', name: 'Tặng 01 Bom Bia Hơi', mode: 'general', code: 'BIA-1BOM', rate: 5 }
     ];
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // KHO MÃ THẬT — Google Sheet + Apps Script (10/11/2026)
+    //
+    // Trước hôm nay trang này TỰ BỊA mã ngay trong máy khách (IPOS05-1001, IPOS10-2001…):
+    // những mã đó KHÔNG có trong iPOS nên thu ngân không gạch được, và máy nào cũng sinh ra
+    // đúng dãy số ấy nên hai khách khác nhau nhận trùng mã. Trang cũng không báo về đâu cả
+    // nên app quản lý không thấy ai vừa chơi.
+    //
+    // Nay MỊI lượt trúng đều xin mã ở máy chủ: mã do iPOS xuất ra, nằm trong Sheet, mỗi mã
+    // phát đúng một lần, và máy chủ tự ghi nhật ký cho app quản lý.
+    // Danh sách giải + tỉ lệ cũng lấy từ máy chủ (tab GIAI_THUONG) — SỬA TỈ LỆ TRONG APP
+    // QUẢN LÝ, đừng sửa trong file này.
+    const MAY_CHU_QUA = 'https://script.google.com/macros/s/AKfycby9QW_ZaYyzIzAhEK3vm5m_gKrPqIV93q7Iqhh9aiQAZjfVXMVBPlDqlzEBW57J7bRI3w/exec';
+    const KHOA_CHUNG = 'TAMKHO-2026';
+    let giaiMayChu = [];
+
+    async function goiMayChu(req) {
+      const r = await fetch(MAY_CHU_QUA, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // text/plain để không dính preflight
+        body: JSON.stringify(req)
+      });
+      return await r.json();
+    }
+
+    async function napCauHinhGiai() {
+      if (giaiMayChu.length) return giaiMayChu;
+      const d = await goiMayChu({ action: 'LAY_CAU_HINH', key: KHOA_CHUNG });
+      if (d && d.ok && Array.isArray(d.giai)) {
+        giaiMayChu = d.giai.filter(g => g.bat && Number(g.tiLe) > 0);
+      }
+      return giaiMayChu;
+    }
+
+    function bocMotGiai(ds) {
+      const tong = ds.reduce((t, g) => t + (Number(g.tiLe) || 0), 0);
+      let r = Math.random() * tong;
+      for (const g of ds) { r -= (Number(g.tiLe) || 0); if (r < 0) return g; }
+      return ds[ds.length - 1];
+    }
+
+    // Máy chủ từ chối thì NÓI THẬT, không bịa mã cho đẹp màn hình.
+    const LYDO_KHONG_CO_MA = {
+      HET_MA: ['KHO MÃ GIẢI NÀY VỪA HẾT', 'Bạn báo nhân viên giúp quán nhé, quán bù giải khác tại bàn!'],
+      SDT_DA_NHAN_HOM_NAY: ['HÔM NAY BẠN ĐÃ NHẬN QUÀ RỒI', 'Mỗi số điện thoại nhận 1 phần quà mỗi ngày. Mai bạn quay lại nhé!'],
+      HET_SUAT_HOM_NAY: ['HÔM NAY QUÁN ĐÃ PHÁT HẾT SUẤT', 'Số phần quà trong ngày đã hết. Mai bạn quay lại nhé!']
+    };
+
+    async function quaTuMayChu(gameLabel) {
+      const sdt = currentCustomer.phone || '';
+      let tenGiai = 'Quà Tám Khô';
+      try {
+        const ds = await napCauHinhGiai();
+        if (!ds.length) throw new Error('KHONG_CO_GIAI');
+        const giai = bocMotGiai(ds);
+        tenGiai = giai.ten || tenGiai;
+        const d = await goiMayChu({
+          action: 'LAY_MA', key: KHOA_CHUNG, tier: giai.loai,
+          phone: sdt, prizeName: giai.ten, gameName: gameLabel, zaloRemind: false
+        });
+        if (d && d.ok && d.code) {
+          return { headline: 'CHÚC MỪNG TRÚNG MÃ VOUCHER!',
+                   desc: 'Đưa mã này cho nhân viên để áp dụng vào hóa đơn!',
+                   item: giai.ten, code: d.code, phone: sdt, isUnique: true, isWin: true };
+        }
+        const l = LYDO_KHONG_CO_MA[(d && d.lyDo) || 'HET_MA'] || LYDO_KHONG_CO_MA.HET_MA;
+        return { headline: l[0], desc: l[1], item: tenGiai, code: '', phone: sdt, isUnique: false, isWin: false };
+      } catch (e) {
+        return { headline: 'CHƯA LẤY ĐƯỢC MÃ',
+                 desc: 'Máy chủ quà đang bận hoặc mạng chập chờn. Bạn thử lại giúp quán nhé!',
+                 item: tenGiai, code: '', phone: sdt, isUnique: false, isWin: false };
+      }
+    }
 
     function createInitialIposPool() {
       const arr = [];
@@ -1509,7 +1549,7 @@
       } else {
         sound.playWin();
       }
-      giveReward(issuePrizeFromItem(finalPrizeRef, 'Gắp khô'));
+      quaTuMayChu('Gắp khô').then(giveReward);
     }
 
     function initGame4Miner() {
@@ -2021,13 +2061,13 @@
 
       if (f1Win && f2Win) {
         sound.playWin();
-        giveReward(resolveDynamicReward('master', 'Canh Lửa 2 Mặt'));
+        quaTuMayChu('Canh Lửa 2 Mặt').then(giveReward);
       } else if ((f1Win && f2Near) || (f2Win && f1Near)) {
         sound.playWin();
-        giveReward(resolveDynamicReward('good', 'Canh Lửa 2 Mặt'));
+        quaTuMayChu('Canh Lửa 2 Mặt').then(giveReward);
       } else {
         sound.playFail();
-        giveReward(resolveDynamicReward('fail', 'Canh Lửa 2 Mặt'));
+        quaTuMayChu('Canh Lửa 2 Mặt').then(giveReward);
       }
     }
 
@@ -2469,7 +2509,7 @@
     function endGame2(won) {
       stopGame2Loop();
       sound.playWin();
-      giveReward(resolveChemKhoRewardByHits(g2Hits));
+      quaTuMayChu('Chém Khô Mực').then(giveReward);
     }
 
     // Mouse & Touch swipe/click listeners on tearCanvas
@@ -2628,9 +2668,9 @@
       // 100% Win Guarantee: Picking Logo Tám Khô unlocks Grand Voucher pool ('master'), picking regular dried squid still wins a Food/Beer prize ('good')!
       sound.playWin();
       if (isWinner) {
-        setTimeout(() => giveReward(resolveDynamicReward('master', 'Mắt Thần Soi Khô (Ô Logo VIP)')), 650);
+        setTimeout(() => quaTuMayChu('Mắt Thần Soi Khô (Ô Logo VIP)').then(giveReward), 650);
       } else {
-        setTimeout(() => giveReward(resolveDynamicReward('good', 'Mắt Thần Soi Khô (Ô Khô Mực)')), 650);
+        setTimeout(() => quaTuMayChu('Mắt Thần Soi Khô (Ô Khô Mực)').then(giveReward), 650);
       }
     }
 
@@ -2676,6 +2716,13 @@
         modalTitle.textContent = 'MAY MẮN LẦN SAU!';
       }
 
+      // Không xin được mã thì giấu luôn tấm vé và nút Lưu — để một tấm vé trống cho khách lưu
+      // vào ví là lúc đưa thu ngân mới vỡ chuyện.
+      const coMa = !!data.code;
+      const theVe = document.getElementById('voucherCardBox');
+      if (theVe) theVe.classList.toggle('hidden', !coMa);
+      if (btnSaveVoucher) btnSaveVoucher.classList.toggle('hidden', !coMa);
+
       rewardModal.classList.remove('hidden');
     }
 
@@ -2693,9 +2740,7 @@
         showToast(`Đã lưu quà vào Ví (📱 ${currentCustomer.phone || ''})!`);
         rewardModal.classList.add('hidden');
         switchView('wallet');
-        if (currentCustomer.zaloRemind) {
-          setTimeout(() => triggerZaloExpiryNotification(savedRewardCopy), 1800);
-        }
+        // (đã tắt nhắc Zalo)
       }
     });
 
@@ -3357,13 +3402,13 @@
     qrLoginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       sound.init();
-      completeQrLogin(customerPhoneInput.value, customerTableInput.value, zaloRemindConsent.checked);
+      completeQrLogin(customerPhoneInput.value, customerTableInput.value, false);
     });
 
     document.getElementById('btnQuickDemoLogin').addEventListener('click', () => {
       sound.init();
       customerPhoneInput.value = '0908888888';
-      completeQrLogin('0908888888', customerTableInput.value || 'Bàn 08', true);
+      completeQrLogin('0908888888', customerTableInput.value || 'Bàn 08', false);
     });
 
     document.getElementById('btnChangeCustomerPhone').addEventListener('click', () => {
@@ -3372,25 +3417,8 @@
       qrLoginModal.classList.remove('hidden');
     });
 
-    function triggerZaloExpiryNotification(customVoucher) {
-      const activeVoucher = customVoucher || vouchers.find(v => !v.used) || {
-        item: 'Voucher Giảm 10% Tổng Bill',
-        code: 'IPOS10-2001'
-      };
-      const phone = currentCustomer.phone || '0908888888';
-      zaloZnsMessage.textContent = `⏰ [Zalo Nhắc Hẹn] Khách SĐT ${phone} ơi! Quà "${activeVoucher.item}" (Mã: ${activeVoucher.code}) còn hạn dùng đến hết ngày 05/12. Đưa thu ngân quét iPOS ngay nhé!`;
-      zaloZnsBanner.classList.remove('hidden');
-      sound.init();
-      sound.playWin();
-    }
-
-    document.getElementById('btnTriggerZaloReminder').addEventListener('click', () => {
-      triggerZaloExpiryNotification();
-    });
-
-    document.getElementById('closeZaloZnsBtn').addEventListener('click', () => {
-      zaloZnsBanner.classList.add('hidden');
-    });
+    // ĐÃ TẮT luồng nhắn Zalo (10/11/2026, chủ quán yêu cầu). Giữ hàm rỗng vì còn chỗ gọi.
+    function triggerZaloExpiryNotification() { }
 
     if (currentCustomer.loggedIn && currentCustomer.phone) {
       qrLoginModal.classList.add('hidden');
