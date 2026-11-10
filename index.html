@@ -1016,9 +1016,18 @@
       const d = await goiMayChu({ action: 'LAY_CAU_HINH', key: KHOA_CHUNG });
       if (d && d.ok && Array.isArray(d.giai)) {
         giaiMayChu = d.giai.filter(g => g.bat && Number(g.tiLe) > 0);
+        // Tên giải HIỆN TRÊN BÀN CHƠI cũng phải là giải thật. Không đồng bộ thì khách
+        // gắp trúng ô "Đậu phộng cháy tỏi" rồi phiếu lại báo "Tặng 06 lon bia" — nhìn như game gian.
+        if (giaiMayChu.length) {
+          prizeList = giaiMayChu.map(g => ({ id: g.loai, name: g.ten, mode: 'unique',
+                                             code: g.tienTo || '', rate: Number(g.tiLe) || 0 }));
+          try { if (typeof renderPrizeSettingsList === 'function') renderPrizeSettingsList(); } catch (e) { }
+        }
       }
       return giaiMayChu;
     }
+
+    napCauHinhGiai().catch(() => { });
 
     function bocMotGiai(ds) {
       const tong = ds.reduce((t, g) => t + (Number(g.tiLe) || 0), 0);
