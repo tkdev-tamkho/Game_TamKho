@@ -538,7 +538,7 @@
 <form id="qrLoginForm" class="space-y-2.5 text-left">
           <div>
             <label class="text-[10px] font-extrabold text-[#0f485b] uppercase block mb-1">📱 Số điện thoại nhận quà (*):</label>
-            <input type="tel" id="customerPhoneInput" required placeholder="Nhập số điện thoại (VD: 0909 123 456)" maxlength="12" class="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#7ab8b6] text-[#123d4f] font-mono font-extrabold text-sm focus:border-[#d94824] focus:outline-none">
+            <input type="tel" id="customerPhoneInput" required placeholder="Nhập số điện thoại của bạn" maxlength="12" class="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#7ab8b6] text-[#123d4f] font-mono font-extrabold text-sm focus:border-[#d94824] focus:outline-none">
             <input type="hidden" id="customerTableInput" value="">
           </div>
 
@@ -552,7 +552,6 @@
 
         <div class="mt-2.5 pt-2 border-t border-[#e2d4b7] flex items-center justify-between text-[10px] text-[#194c5e] font-semibold">
           <span>🔒 Bảo mật SĐT khách hàng</span>
-          <button type="button" id="btnQuickDemoLogin" class="text-[#c83228] font-extrabold underline hover: opacity-80">Dùng thử nhanh (0908.888.888)</button>
         </div>
       </div>
     </div>
@@ -3405,12 +3404,6 @@
       completeQrLogin(customerPhoneInput.value, customerTableInput.value, false);
     });
 
-    document.getElementById('btnQuickDemoLogin').addEventListener('click', () => {
-      sound.init();
-      customerPhoneInput.value = '0908888888';
-      completeQrLogin('0908888888', customerTableInput.value || 'Bàn 08', false);
-    });
-
     document.getElementById('btnChangeCustomerPhone').addEventListener('click', () => {
       customerPhoneInput.value = currentCustomer.phone || '';
       customerTableInput.value = currentCustomer.table || 'Bàn 08';
@@ -3645,7 +3638,7 @@
     if (btnTestWebhookSend) {
       btnTestWebhookSend.addEventListener('click', () => {
         const sampleLead = {
-          phone: currentCustomer.phone || '0908888888',
+          phone: currentCustomer.phone || '',
           prizeName: 'Voucher Giảm 10% Tổng Bill (Test)',
           code: 'IPOS10-TEST',
           gameName: 'Test Đồng Bộ Sheet',
