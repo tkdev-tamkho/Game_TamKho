@@ -479,7 +479,14 @@
         <div class="mb-2 rounded-xl bg-[#fbf3e1] border border-[#d96441] px-3 py-2 text-[10px] leading-snug text-left">
   <div class="font-extrabold text-[#c83228] text-center leading-snug">🎁 Tất cả quà tặng, voucher áp dụng từ ngày 12/11 đến ngày 05/12</div>
   <div class="font-semibold text-[#123d4f] text-center">tại chi nhánh Tám Khô - 474 Lũy Bán Bích, P. Tân Phú</div>
-  <div class="font-semibold text-[#123d4f] mt-1">⚠️ Chỉ áp dụng 01 chương trình khuyến mãi cao nhất, không áp dụng chung với khuyến mãi khác</div>
+  <div class="mt-1 pt-1 border-t border-[#d96441]/45">
+    <div class="font-extrabold text-[#c83228] uppercase tracking-wide">Điều kiện sử dụng mã quà, voucher</div>
+    <ul class="list-disc pl-3.5 mt-0.5 space-y-px font-semibold text-[#123d4f]">
+      <li>Không áp dụng đồng thời các chương trình khuyến mãi khác.</li>
+      <li>Tuỳ thời điểm chương trình khuyến mãi nào giá trị cao nhất thì áp dụng cho quý khách.</li>
+    </ul>
+    <div class="font-extrabold text-[#c83228] mt-1">⚠️ Lưu ý: Chỉ có giá trị sử dụng tại Tám Khô 474 Luỹ Bán Bích</div>
+  </div>
 </div>
 <div id="walletList" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
         <div class="mt-2 p-2.5 rounded-2xl bg-[#e3f2f1] border border-[#0068ff]/30 flex items-center justify-between gap-2">
@@ -832,7 +839,7 @@
 
     <!-- MODAL: REWARD CARD (GIAO DIỆN QUÀ TẶNG MỚI ĐỒNG BỘ MÀU KEM - XANH BIỂN - ĐỎ CAM TÁM KHÔ) -->
     <div id="rewardModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f2630]/80 backdrop-blur-md">
-      <div class="w-full max-w-sm rounded-3xl bg-[#fbf4e4] border-[3.5px] border-[#d96441] shadow-[0_12px_35px_rgba(0,0,0,0.45)] p-5 text-center text-[#123d4f] relative overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div class="w-full max-w-sm rounded-3xl bg-[#fbf4e4] border-[3.5px] border-[#d96441] shadow-[0_12px_35px_rgba(0,0,0,0.45)] p-5 text-center text-[#123d4f] relative max-h-[88vh] overflow-y-auto overflow-x-hidden animate-in fade-in zoom-in duration-200">
         <!-- Decorative Top Coastal Stripe -->
         <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-[#8bc9c7] via-[#ea5d36] to-[#8bc9c7]"></div>
 
@@ -851,7 +858,6 @@
         <div class="rounded-xl bg-[#fbf3e1] border border-[#d96441] px-2.5 py-1.5 mb-1.5 text-[10px] text-left leading-snug">
   <div class="font-extrabold text-[#c83228]">🎁 Tất cả quà tặng, voucher áp dụng từ ngày 12/11 đến ngày 05/12</div>
   <div class="font-semibold text-[#123d4f]">📍 tại chi nhánh Tám Khô - 474 Lũy Bán Bích, P. Tân Phú</div>
-  <div class="font-semibold text-[#123d4f] mt-0.5">⚠️ Chỉ áp dụng 01 chương trình khuyến mãi cao nhất, không áp dụng chung với khuyến mãi khác</div>
 </div>
 <!-- Voucher Card Visual (Coastal Cream & Teal Ticket with Coral Accent) -->
         <div class="bg-gradient-to-br from-[#e3f2f1] to-[#cde8e6] border-2 border-dashed border-[#163d4b] rounded-2xl p-3.5 my-2 text-left relative shadow-inner">
@@ -873,7 +879,15 @@
           </div>
         </div>
 
-        <div class="space-y-2 mt-4">
+        <div class="rounded-xl bg-[#fbf3e1] border border-[#d96441] px-2.5 py-1.5 mt-1.5 text-[10px] text-left leading-snug">
+    <div class="font-extrabold text-[#c83228] uppercase tracking-wide">Điều kiện sử dụng mã quà, voucher</div>
+    <ul class="list-disc pl-3.5 mt-0.5 space-y-px font-semibold text-[#123d4f]">
+      <li>Không áp dụng đồng thời các chương trình khuyến mãi khác.</li>
+      <li>Tuỳ thời điểm chương trình khuyến mãi nào giá trị cao nhất thì áp dụng cho quý khách.</li>
+    </ul>
+    <div class="font-extrabold text-[#c83228] mt-1">⚠️ Lưu ý: Chỉ có giá trị sử dụng tại Tám Khô 474 Luỹ Bán Bích</div>
+        </div>
+        <div class="space-y-2 mt-4 sticky bottom-0 -mx-5 px-5 pt-2 pb-1 bg-[#fbf4e4]">
           <button id="btnSaveVoucher" class="w-full py-3 rounded-2xl btn-choi-ngay-pill hover:brightness-105 text-white font-extrabold font-brand text-sm uppercase tracking-wider shadow-lg active:scale-95 transition">
             Lưu vào ví quà
           </button>
