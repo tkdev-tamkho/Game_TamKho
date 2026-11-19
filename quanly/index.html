@@ -591,7 +591,7 @@ function phanTich(d){
 
   // --- tỉ lệ thực tế 30 ngày theo tên giải
   const log30=log.filter(x=>x.luc>=now-30*NGAY_MS), demGiai={};
-  log30.forEach(x=>{ if(x.giai) demGiai[x.giai]=(demGiai[x.giai]||0)+1 });
+  log30.forEach(x=>{ if(x.giai && x.ma) demGiai[x.giai]=(demGiai[x.giai]||0)+1 });   // lượt bị từ chối không có mã, không tính
 
   // --- cảnh báo
   const canh=[];

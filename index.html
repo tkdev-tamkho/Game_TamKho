@@ -851,6 +851,7 @@
   </ul>
   <div class="font-extrabold text-[#c83228] mt-1">⚠️ Lưu ý: Chỉ có giá trị sử dụng tại Tám Khô 474 Luỹ Bán Bích</div>
         </div>
+        <p id="hetLuotNote" class="hidden mt-3 px-2 py-1.5 rounded-xl bg-[#163d4b]/10 text-[11px] font-extrabold text-[#123d4f]">⏳ Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!</p>
         <div class="space-y-2 mt-4 sticky bottom-0 -mx-5 px-5 pt-2 pb-1 bg-[#fbf4e4]">
           <button id="btnSaveVoucher" class="w-full py-3 rounded-2xl btn-choi-ngay-pill hover:brightness-105 text-white font-extrabold font-brand text-sm uppercase tracking-wider shadow-lg active:scale-95 transition">
             Lưu vào ví quà
@@ -1041,33 +1042,146 @@
       HET_MA: ['KHO MÃ GIẢI NÀY VỪA HẾT', 'Bạn báo nhân viên giúp quán nhé, quán bù giải khác tại bàn!'],
       SDT_DA_CHOI_TRO_NAY: ['BẠN ĐÃ CHƠI TRÒ NÀY RỒI', 'Mỗi số điện thoại chơi mỗi trò 1 lần thôi. Bạn chọn TRÒ KHÁC để nhận thêm quà nhé!'],
       SDT_DA_NHAN_HOM_NAY: ['HÔM NAY BẠN ĐÃ NHẬN QUÀ RỒI', 'Mỗi số điện thoại nhận 1 phần quà mỗi ngày. Mai bạn quay lại nhé!'],
+      SDT_DA_CHOI_HOM_NAY: ['HÔM NAY BẠN ĐÃ NHẬN QUÀ RỒI', 'Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!'],
+      SDT_KHONG_HOP_LE: ['SỐ ĐIỆN THOẠI CHƯA ĐÚNG', 'Bạn nhập lại số điện thoại giúp quán nhé!'],
       HET_SUAT_HOM_NAY: ['HÔM NAY QUÁN ĐÃ PHÁT HẾT SUẤT', 'Số phần quà trong ngày đã hết. Mai bạn quay lại nhé!']
     };
 
-    async function quaTuMayChu(gameLabel) {
-      const sdt = currentCustomer.phone || '';
-      let tenGiai = 'Quà Tám Khô';
+    // =====================================================================
+    // LUẬT 1 LƯỢT / 1 SĐT / 1 NGÀY (19/11/2026, sau ca 0399462198 chơi 4 lần)
+    // Chặn THẬT nằm ở máy chủ (KIEM_LUOT + LAY_MA, khoá LockService). Phần dưới đây chỉ
+    // là lớp ngoài: khoá theo thiết bị (localStorage + cookie) để khách không đổi SĐT ảo
+    // trên cùng điện thoại, và giấu các nút chơi lại.
+    // Giải do MÁY CHỦ bốc theo kết quả ván (số sợi / ô đã chọn), máy này không chọn giải.
+    // =====================================================================
+    const fNgayVN = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' });
+    function khoaLuotThietBi() { return 'played_' + fNgayVN.format(new Date()); }
+    function docCookie(k) {
+      const m = document.cookie.match(new RegExp('(?:^|; )' + k + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+    function laCheDoChuQuan() { try { return !!isAdminUnlocked; } catch (e) { return false; } }
+    function thietBiDaChoi() {
+      let v = '';
+      try { v = localStorage.getItem(khoaLuotThietBi()) || ''; } catch (e) { }
+      return v || docCookie(khoaLuotThietBi());
+    }
+    function ghiThietBiDaChoi(sdt) {
+      const k = khoaLuotThietBi(), v = String(sdt || '1');
+      try { localStorage.setItem(k, v); } catch (e) { }
+      document.cookie = k + '=' + encodeURIComponent(v) + '; max-age=86400; path=/; SameSite=Lax';
+      capNhatNutDoiSdt();
+    }
+    function capNhatNutDoiSdt() {
+      const b = document.getElementById('btnChangeCustomerPhone');
+      if (b) b.classList.toggle('hidden', !!thietBiDaChoi() && !laCheDoChuQuan());
+    }
+    const soChuan = x => String(x || '').replace(/[^0-9]/g, '').replace(/^0+/, '');
+
+    // Quà máy chủ trả lại (quà đã nhận hôm nay) cũng phải nằm trong Ví quà
+    function dongBoViQua(item, code) {
+      if (!code) return;
       try {
-        const ds = await napCauHinhGiai();
-        if (!ds.length) throw new Error('KHONG_CO_GIAI');
-        const giai = bocMotGiai(ds);
-        tenGiai = giai.ten || tenGiai;
+        if (vouchers.some(v => v.code === code)) return;
+        vouchers.unshift({ item: item, code: code, isUnique: true,
+          date: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }), used: false });
+        saveVouchersToStorage();
+      } catch (e) { }
+    }
+
+    function phieuTuChoi(d, sdt, tenGiai) {
+      const lyDo = (d && d.lyDo) || 'HET_MA';
+      if (lyDo === 'SDT_DA_CHOI_HOM_NAY') ghiThietBiDaChoi(sdt);
+      // Đã nhận quà hôm nay: hiện lại ĐÚNG quà + mã cũ, không phát thêm
+      if (lyDo === 'SDT_DA_CHOI_HOM_NAY' && d.quaCu && d.quaCu.ma) {
+        dongBoViQua(d.quaCu.giai, d.quaCu.ma);
+        return { headline: 'HÔM NAY BẠN ĐÃ NHẬN QUÀ RỒI',
+                 desc: 'Đây là quà bạn đã trúng hôm nay. Đưa mã này cho nhân viên nhé!',
+                 item: d.quaCu.giai, code: d.quaCu.ma, phone: sdt, isUnique: true, isWin: true, hetLuot: true };
+      }
+      const l = LYDO_KHONG_CO_MA[lyDo] || LYDO_KHONG_CO_MA.HET_MA;
+      return { headline: l[0], desc: l[1], item: tenGiai || 'Quà Tám Khô', code: '', phone: sdt, isUnique: false, isWin: false,
+               hetLuot: lyDo === 'SDT_DA_CHOI_HOM_NAY' || lyDo === 'HET_SUAT_HOM_NAY' };
+    }
+
+    // ketQua: { soi: số sợi } cho Chém Khô Mực, { o: 'LOGO' | 'KHO_MUC' } cho Mắt Thần
+    async function quaTuMayChu(gameLabel, ketQua) {
+      const sdt = currentCustomer.phone || '';
+      try {
+        napCauHinhGiai().catch(() => { });
         const d = await goiMayChu({
-          action: 'LAY_MA', key: KHOA_CHUNG, tier: giai.loai,
-          phone: sdt, prizeName: giai.ten, gameName: gameLabel, zaloRemind: false
+          action: 'KET_THUC', key: KHOA_CHUNG, phone: sdt, gameName: gameLabel,
+          ketQua: ketQua || {}, zaloRemind: false
         });
         if (d && d.ok && d.code) {
+          ghiThietBiDaChoi(sdt);
           return { headline: 'CHÚC MỪNG TRÚNG MÃ VOUCHER!',
                    desc: 'Đưa mã này cho nhân viên để áp dụng vào hóa đơn!',
-                   item: giai.ten, code: d.code, phone: sdt, isUnique: true, isWin: true };
+                   item: d.giai || 'Quà Tám Khô', code: d.code, phone: sdt, isUnique: true, isWin: true, hetLuot: true };
         }
-        const l = LYDO_KHONG_CO_MA[(d && d.lyDo) || 'HET_MA'] || LYDO_KHONG_CO_MA.HET_MA;
-        return { headline: l[0], desc: l[1], item: tenGiai, code: '', phone: sdt, isUnique: false, isWin: false };
+        return phieuTuChoi(d, sdt);
       } catch (e) {
         return { headline: 'CHƯA LẤY ĐƯỢC MÃ',
                  desc: 'Máy chủ quà đang bận hoặc mạng chập chờn. Bạn thử lại giúp quán nhé!',
-                 item: tenGiai, code: '', phone: sdt, isUnique: false, isWin: false };
+                 item: 'Quà Tám Khô', code: '', phone: sdt, isUnique: false, isWin: false };
       }
+    }
+
+    // CHỐT LƯỢT NGAY KHI BẤM CHƠI NGAY (19/11/2026).
+    // Máy chủ trừ lượt + giữ sẵn một mã giải nhỏ. Khách F5 / tắt máy / bấm Trở về giữa ván
+    // thì vẫn mất lượt và giữ đúng giải nhỏ đó — không cày lại từ đầu được.
+    let dangKiemLuot = false;
+    let vanDangChoi = null;      // { giai, ma } — giải đã chốt lúc vào ván
+    async function vaoTroChoi(view, tenTro, truocKhiVao, chotNgay) {
+      if (dangKiemLuot) return false;
+      const sdt = currentCustomer.phone || '';
+      if (!sdt) { document.getElementById('qrLoginModal').classList.remove('hidden'); return false; }
+      const chuQuan = laCheDoChuQuan();
+      if (thietBiDaChoi() && !chuQuan) {
+        giveReward({ headline: 'MÁY NÀY ĐÃ CHƠI HÔM NAY',
+                     desc: 'Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!',
+                     item: '', code: '', phone: sdt, isUnique: false, isWin: false, hetLuot: true });
+        return false;
+      }
+      dangKiemLuot = true;
+      let d = null;
+      try {
+        d = await goiMayChu({ action: chotNgay ? 'BAT_DAU' : 'KIEM_LUOT', key: KHOA_CHUNG,
+                              phone: sdt, gameName: tenTro });
+      } catch (e) { d = null; }      // mất mạng: vẫn cho vào, máy chủ còn chặn lần nữa lúc kết thúc
+      finally { dangKiemLuot = false; }
+
+      if (d && d.ok && d.lyDo === 'SDT_KHONG_HOP_LE') {
+        document.getElementById('qrLoginModal').classList.remove('hidden');
+        return false;
+      }
+      if (d && d.ok && (d.conLuot === false || (chotNgay && !d.code))) {
+        giveReward(phieuTuChoi(d, sdt));
+        return false;
+      }
+      if (d && d.ok && d.code) {
+        vanDangChoi = { giai: d.giai, ma: d.code };
+        ghiThietBiDaChoi(sdt);       // trừ lượt trên máy ngay, kể cả khi khách F5 ngay sau đó
+      }
+      if (truocKhiVao) truocKhiVao();
+      if (view) switchView(view);
+      return true;
+    }
+    // Ván đã kết thúc mà bấm chơi lại ngay trong màn chơi
+    function chanChoiLai() {
+      if (laCheDoChuQuan() || !thietBiDaChoi()) return false;
+      giveReward({ headline: 'HÔM NAY BẠN ĐÃ NHẬN QUÀ RỒI',
+                   desc: 'Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!',
+                   item: '', code: '', phone: currentCustomer.phone || '', isUnique: false, isWin: false, hetLuot: true });
+      return true;
+    }
+    // Ván đã kết thúc mà bấm chơi lại ngay trong màn chơi
+    function chanChoiLai() {
+      if (laCheDoChuQuan() || !thietBiDaChoi()) return false;
+      giveReward({ headline: 'HÔM NAY BẠN ĐÃ NHẬN QUÀ RỒI',
+                   desc: 'Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!',
+                   item: '', code: '', phone: currentCustomer.phone || '', isUnique: false, isWin: false, hetLuot: true });
+      return true;
     }
 
     function createInitialIposPool() {
@@ -2306,6 +2420,7 @@
     function doSmashHit() {
       sound.init();
       if (!g2Active) {
+        if (chanChoiLai()) return;
         initGame2Tear();
         return;
       }
@@ -2518,7 +2633,7 @@
     function endGame2(won) {
       stopGame2Loop();
       sound.playWin();
-      quaTuMayChu('Chém Khô Mực').then(giveReward);
+      quaTuMayChu('Chém Khô Mực', { soi: g2Hits }).then(giveReward);
     }
 
     // Mouse & Touch swipe/click listeners on tearCanvas
@@ -2605,8 +2720,11 @@
       }
     }
 
-    btnG3Start.addEventListener('click', () => {
+    btnG3Start.addEventListener('click', async () => {
+      if (isShufflingG3) return;
       sound.init();
+      // Chốt lượt ngay lúc bắt đầu đảo ô — bỏ ngang là vẫn mất lượt, giữ giải nhỏ đã chốt
+      if (!vanDangChoi && !(await vaoTroChoi(null, 'Mắt Thần Soi Khô', null, true))) return;
       if (isShufflingG3) return;
       isShufflingG3 = true;
       g3ReadyToPick = false;
@@ -2677,9 +2795,9 @@
       // 100% Win Guarantee: Picking Logo Tám Khô unlocks Grand Voucher pool ('master'), picking regular dried squid still wins a Food/Beer prize ('good')!
       sound.playWin();
       if (isWinner) {
-        setTimeout(() => quaTuMayChu('Mắt Thần Soi Khô (Ô Logo VIP)').then(giveReward), 650);
+        setTimeout(() => quaTuMayChu('Mắt Thần Soi Khô (Ô Logo VIP)', { o: 'LOGO' }).then(giveReward), 650);
       } else {
-        setTimeout(() => quaTuMayChu('Mắt Thần Soi Khô (Ô Khô Mực)').then(giveReward), 650);
+        setTimeout(() => quaTuMayChu('Mắt Thần Soi Khô (Ô Khô Mực)', { o: 'KHO_MUC' }).then(giveReward), 650);
       }
     }
 
@@ -2700,6 +2818,7 @@
     const btnPlayAgain = document.getElementById('btnPlayAgain');
 
     function giveReward(data) {
+      if (data && data.code) vanDangChoi = null;
       currentReward = data;
       modalRewardHeadline.textContent = data.headline;
       modalRewardDesc.textContent = data.desc;
@@ -2732,10 +2851,24 @@
       if (theVe) theVe.classList.toggle('hidden', !coMa);
       if (btnSaveVoucher) btnSaveVoucher.classList.toggle('hidden', !coMa);
 
+      // Hết lượt hôm nay: chỉ còn nút Lưu vào Ví quà (chủ quán mở PIN thì vẫn thấy Chơi tiếp)
+      const hetLuot = !!data.hetLuot;
+      btnPlayAgain.classList.toggle('hidden', hetLuot && !laCheDoChuQuan());
+      const ghiChuHet = document.getElementById('hetLuotNote');
+      if (ghiChuHet) ghiChuHet.classList.toggle('hidden', !hetLuot);
+      // Không có mã mà cũng hết lượt: phải còn nút để đóng
+      if (hetLuot && !coMa && !laCheDoChuQuan()) { btnPlayAgain.classList.remove('hidden'); btnPlayAgain.textContent = 'Về trang chủ'; }
+      else btnPlayAgain.textContent = 'Chơi tiếp thử thách khác';
+
       rewardModal.classList.remove('hidden');
     }
 
     btnSaveVoucher.addEventListener('click', () => {
+      if (currentReward && vouchers.some(v => v.code && v.code === currentReward.code)) {
+        rewardModal.classList.add('hidden');
+        switchView('wallet');
+        return;
+      }
       if (currentReward) {
         vouchers.unshift({
           item: currentReward.item,
@@ -3331,7 +3464,7 @@
     document.getElementById('backFromWallet').addEventListener('click', () => switchView('home'));
 
     document.getElementById('btnStartGame4').addEventListener('click', () => {
-      switchView('game4');
+      vaoTroChoi('game4', 'Gắp khô', null, true);
     });
     document.getElementById('backFromGame4').addEventListener('click', () => {
       stopGame4Loop();
@@ -3339,8 +3472,7 @@
     });
 
     document.getElementById('btnStartGame1').addEventListener('click', () => {
-      resetGame1();
-      switchView('game1');
+      vaoTroChoi('game1', 'Canh Lửa 2 Mặt', resetGame1, true);
     });
     document.getElementById('backFromGame1').addEventListener('click', () => {
       resetGame1();
@@ -3348,7 +3480,7 @@
     });
 
     document.getElementById('btnStartGame2').addEventListener('click', () => {
-      switchView('game2');
+      vaoTroChoi('game2', 'Chém Khô Mực', null, true);
     });
     document.getElementById('backFromGame2').addEventListener('click', () => {
       stopGame2Loop();
@@ -3356,7 +3488,7 @@
     });
 
     document.getElementById('btnStartGame3').addEventListener('click', () => {
-      switchView('game3');
+      vaoTroChoi('game3', 'Mắt Thần Soi Khô');
     });
     document.getElementById('backFromGame3').addEventListener('click', () => {
       switchView('home');
@@ -3384,15 +3516,24 @@
       if (walletPhoneLabel) {
         walletPhoneLabel.textContent = phoneDisplay;
       }
+      capNhatNutDoiSdt();
     }
 
     function completeQrLogin(phoneRaw, tableRaw, remindChecked) {
       const cleaned = (phoneRaw || '').replace(/[^0-9]/g, '');
       if (cleaned.length < 9 || cleaned.length > 11) {
+        qrLoginError.textContent = 'Vui lòng nhập số điện thoại hợp lệ (9-11 số)!';
         qrLoginError.classList.remove('hidden');
         return false;
       }
       qrLoginError.classList.add('hidden');
+      // Máy này hôm nay đã chơi bằng SĐT khác: không cho đổi sang số mới (trừ chủ quán)
+      const daChoi = thietBiDaChoi();
+      if (daChoi && daChoi !== '1' && soChuan(daChoi) !== soChuan(cleaned) && !laCheDoChuQuan()) {
+        qrLoginError.textContent = 'Điện thoại này hôm nay đã chơi bằng số ' + daChoi + '. Hẹn bạn ngày mai nhé!';
+        qrLoginError.classList.remove('hidden');
+        return false;
+      }
       currentCustomer = {
         phone: cleaned,
         table: (tableRaw || 'Bàn 08').trim(),
@@ -3415,6 +3556,10 @@
     });
 
     document.getElementById('btnChangeCustomerPhone').addEventListener('click', () => {
+      if (thietBiDaChoi() && !laCheDoChuQuan()) {
+        showToast('Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!');
+        return;
+      }
       customerPhoneInput.value = currentCustomer.phone || '';
       customerTableInput.value = currentCustomer.table || 'Bàn 08';
       qrLoginModal.classList.remove('hidden');
@@ -3463,6 +3608,7 @@
         if (adminHeaderPoolLine) adminHeaderPoolLine.classList.add('hidden');
         settingsModal.classList.add('hidden');
       }
+      capNhatNutDoiSdt();
     }
 
     // Open the PIN gate (or jump straight into Settings when already unlocked)
