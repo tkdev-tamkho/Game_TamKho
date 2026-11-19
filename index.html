@@ -1061,22 +1061,33 @@
       return m ? decodeURIComponent(m[1]) : '';
     }
     function laCheDoChuQuan() { try { return !!isAdminUnlocked; } catch (e) { return false; } }
-    function thietBiDaChoi() {
+    const soChuan = x => String(x || '').replace(/[^0-9]/g, '').replace(/^0+/, '');
+    /** Các SĐT đã chơi hôm nay trên máy này (nhiều số, cách nhau dấu phẩy).
+     *  KHOÁ THEO SỐ, KHÔNG KHOÁ THEO MÁY (chủ quán chốt 19/11/2026): đổi số là khách khác
+     *  nên vẫn cho đổi — một điện thoại ở bàn có thể cho cả bàn chơi. Số mới vẫn 1 lượt/ngày
+     *  và mỗi trò 1 lần cả đợt, nên một số chỉ chơi được 2 lượt.
+     *  Dấu này chỉ để khách F5 giữa ván không vào lại; chặn thật nằm ở máy chủ. */
+    function dsDaChoiHomNay() {
       let v = '';
       try { v = localStorage.getItem(khoaLuotThietBi()) || ''; } catch (e) { }
-      return v || docCookie(khoaLuotThietBi());
+      v = v || docCookie(khoaLuotThietBi());
+      return String(v).split(',').map(soChuan).filter(Boolean);
     }
-    function ghiThietBiDaChoi(sdt) {
-      const k = khoaLuotThietBi(), v = String(sdt || '1');
+    /** Số này đã chơi hôm nay chưa. Không truyền thì xét số đang đăng nhập. */
+    function sdtDaChoi(sdt) {
+      const so = soChuan(sdt == null ? (currentCustomer.phone || '') : sdt);
+      return !!so && dsDaChoiHomNay().indexOf(so) >= 0;
+    }
+    function ghiDaChoi(sdt) {
+      const so = soChuan(sdt);
+      if (!so) return;
+      const ds = dsDaChoiHomNay();
+      if (ds.indexOf(so) < 0) ds.push(so);
+      const k = khoaLuotThietBi(), v = ds.join(',');
       try { localStorage.setItem(k, v); } catch (e) { }
       document.cookie = k + '=' + encodeURIComponent(v) + '; max-age=86400; path=/; SameSite=Lax';
-      capNhatNutDoiSdt();
     }
-    function capNhatNutDoiSdt() {
-      const b = document.getElementById('btnChangeCustomerPhone');
-      if (b) b.classList.toggle('hidden', !!thietBiDaChoi() && !laCheDoChuQuan());
-    }
-    const soChuan = x => String(x || '').replace(/[^0-9]/g, '').replace(/^0+/, '');
+    function capNhatNutDoiSdt() { }   // nút Đổi SĐT luôn hiện
 
     // Quà máy chủ trả lại (quà đã nhận hôm nay) cũng phải nằm trong Ví quà
     function dongBoViQua(item, code) {
@@ -1091,7 +1102,7 @@
 
     function phieuTuChoi(d, sdt, tenGiai) {
       const lyDo = (d && d.lyDo) || 'HET_MA';
-      if (lyDo === 'SDT_DA_CHOI_HOM_NAY') ghiThietBiDaChoi(sdt);
+      if (lyDo === 'SDT_DA_CHOI_HOM_NAY') ghiDaChoi(sdt);
       // Đã nhận quà hôm nay: hiện lại ĐÚNG quà + mã cũ, không phát thêm
       if (lyDo === 'SDT_DA_CHOI_HOM_NAY' && d.quaCu && d.quaCu.ma) {
         dongBoViQua(d.quaCu.giai, d.quaCu.ma);
@@ -1114,7 +1125,7 @@
           ketQua: ketQua || {}, zaloRemind: false
         });
         if (d && d.ok && d.code) {
-          ghiThietBiDaChoi(sdt);
+          ghiDaChoi(sdt);
           return { headline: 'CHÚC MỪNG TRÚNG MÃ VOUCHER!',
                    desc: 'Đưa mã này cho nhân viên để áp dụng vào hóa đơn!',
                    item: d.giai || 'Quà Tám Khô', code: d.code, phone: sdt, isUnique: true, isWin: true, hetLuot: true };
@@ -1136,10 +1147,9 @@
       if (dangKiemLuot) return false;
       const sdt = currentCustomer.phone || '';
       if (!sdt) { document.getElementById('qrLoginModal').classList.remove('hidden'); return false; }
-      const chuQuan = laCheDoChuQuan();
-      if (thietBiDaChoi() && !chuQuan) {
-        giveReward({ headline: 'MÁY NÀY ĐÃ CHƠI HÔM NAY',
-                     desc: 'Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!',
+      if (sdtDaChoi(sdt) && !laCheDoChuQuan()) {
+        giveReward({ headline: 'SỐ NÀY ĐÃ NHẬN QUÀ HÔM NAY',
+                     desc: 'Số ' + sdt + ' đã dùng hết lượt hôm nay. Bạn khác muốn chơi thì bấm Đổi SĐT ở trang chủ nhé!',
                      item: '', code: '', phone: sdt, isUnique: false, isWin: false, hetLuot: true });
         return false;
       }
@@ -1161,7 +1171,7 @@
       }
       if (d && d.ok && d.code) {
         vanDangChoi = { giai: d.giai, ma: d.code };
-        ghiThietBiDaChoi(sdt);       // trừ lượt trên máy ngay, kể cả khi khách F5 ngay sau đó
+        ghiDaChoi(sdt);              // trừ lượt của SỐ NÀY ngay, kể cả khi khách F5 ngay sau đó
       }
       if (truocKhiVao) truocKhiVao();
       if (view) switchView(view);
@@ -1169,17 +1179,9 @@
     }
     // Ván đã kết thúc mà bấm chơi lại ngay trong màn chơi
     function chanChoiLai() {
-      if (laCheDoChuQuan() || !thietBiDaChoi()) return false;
-      giveReward({ headline: 'HÔM NAY BẠN ĐÃ NHẬN QUÀ RỒI',
-                   desc: 'Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!',
-                   item: '', code: '', phone: currentCustomer.phone || '', isUnique: false, isWin: false, hetLuot: true });
-      return true;
-    }
-    // Ván đã kết thúc mà bấm chơi lại ngay trong màn chơi
-    function chanChoiLai() {
-      if (laCheDoChuQuan() || !thietBiDaChoi()) return false;
-      giveReward({ headline: 'HÔM NAY BẠN ĐÃ NHẬN QUÀ RỒI',
-                   desc: 'Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!',
+      if (laCheDoChuQuan() || !sdtDaChoi()) return false;
+      giveReward({ headline: 'SỐ NÀY ĐÃ NHẬN QUÀ HÔM NAY',
+                   desc: 'Số ' + (currentCustomer.phone || '') + ' đã dùng hết lượt hôm nay. Bạn khác muốn chơi thì bấm Đổi SĐT nhé!',
                    item: '', code: '', phone: currentCustomer.phone || '', isUnique: false, isWin: false, hetLuot: true });
       return true;
     }
@@ -3527,13 +3529,6 @@
         return false;
       }
       qrLoginError.classList.add('hidden');
-      // Máy này hôm nay đã chơi bằng SĐT khác: không cho đổi sang số mới (trừ chủ quán)
-      const daChoi = thietBiDaChoi();
-      if (daChoi && daChoi !== '1' && soChuan(daChoi) !== soChuan(cleaned) && !laCheDoChuQuan()) {
-        qrLoginError.textContent = 'Điện thoại này hôm nay đã chơi bằng số ' + daChoi + '. Hẹn bạn ngày mai nhé!';
-        qrLoginError.classList.remove('hidden');
-        return false;
-      }
       currentCustomer = {
         phone: cleaned,
         table: (tableRaw || 'Bàn 08').trim(),
@@ -3543,6 +3538,7 @@
       try {
         localStorage.setItem('tam_kho_customer_session', JSON.stringify(currentCustomer));
       } catch (e) {}
+      vanDangChoi = null;        // đổi sang số khác thì ván của số cũ không còn hiệu lực
       updateCustomerUiBadges();
       qrLoginModal.classList.add('hidden');
       showToast(`📱 Xin chào ${cleaned}! Chúc bạn săn quà vui vẻ!`);
@@ -3556,10 +3552,6 @@
     });
 
     document.getElementById('btnChangeCustomerPhone').addEventListener('click', () => {
-      if (thietBiDaChoi() && !laCheDoChuQuan()) {
-        showToast('Bạn đã dùng hết 1 lượt chơi hôm nay, hẹn gặp lại ngày mai!');
-        return;
-      }
       customerPhoneInput.value = currentCustomer.phone || '';
       customerTableInput.value = currentCustomer.table || 'Bàn 08';
       qrLoginModal.classList.remove('hidden');
